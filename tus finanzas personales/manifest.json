@@ -2,7 +2,7 @@
   "name": "Tus Finanzas Personales",
   "short_name": "Tus Finanzas",
   "description": "Registrá y controlá tus gastos e ingresos personales",
-  "start_url": "/index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#1A1A2E",
   "theme_color": "#1A1A2E",
@@ -10,16 +10,17 @@
   "lang": "es-AR",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "./icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ]
 }
+
