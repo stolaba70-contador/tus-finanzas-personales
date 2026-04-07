@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tus Finanzas Personales</title>
+<meta name="theme-color" content="#1A1A2E">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo"><span class="material-icons-round">savings</span></div>
+    <div class="auth-title">Tus Finanzas Personales</div>
+    <div class="auth-sub" id="auth-subtitle">Iniciá sesión para continuar</div>
+    <div class="auth-msg" id="auth-msg"></div>
+    <div class="auth-field">
+      <label>Email</label>
+      <input type="email" id="auth-email" placeholder="tu@email.com" autocomplete="email">
+    </div>
+    <div class="auth-field">
+      <label>Contraseña</label>
+      <input type="password" id="auth-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="auth-field" id="auth-pass2-wrap" style="display:none">
+      <label>Repetir contraseña</label>
+      <input type="password" id="auth-pass2" placeholder="••••••••">
+    </div>
+    <button class="btn-auth" id="auth-btn" onclick="submitAuth()">Ingresar</button>
+    <div class="auth-toggle">
+      <span id="auth-toggle-text">¿No tenés cuenta?</span>
+      <a onclick="toggleAuthMode()"> <span id="auth-toggle-link">Registrarse</span></a>
+    </div>
+  </div>
+</div>
+
+<!-- PENDING SCREEN -->
+<div id="pending-screen" style="display:none">
+  <div class="auth-card" style="text-align:center;">
+    <div class="auth-logo"><span class="material-icons-round">hourglass_top</span></div>
+    <div class="auth-title">Acceso pendiente</div>
+    <p style="font-size:14px; color:var(--text-2); margin:12px 0 24px; line-height:1.6;">
+      Tu cuenta fue creada correctamente. Estamos verificando tus datos para habilitarte el acceso.<br><br>
+      Contactate por Instagram para acelerar el proceso.
+    </p>
+    <a href="https://www.instagram.com/santi.fabricio" target="_blank" style="
+      display:inline-flex; align-items:center; gap:8px; padding:12px 22px;
+      background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+      color:white; border-radius:var(--r-lg); text-decoration:none;
+      font-family:var(--font); font-size:14px; font-weight:700;">
+      @santi.fabricio
+    </a>
+    <br><br>
+    <button onclick="cerrarSesion()" style="
+      background:none; border:none; color:var(--text-3); font-family:var(--font);
+      font-size:13px; cursor:pointer; text-decoration:underline;">
+      Cerrar sesión
+    </button>
+  </div>
+</div>
+
+<!-- APP WRAPPER -->
+<div id="app-wrapper">
+<div class="app-bar">
+  <div class="app-bar-title">
+    <div class="logo-icon"><span class="material-icons-round">savings</span></div>
+    <div class="logo-text">
+      <div class="name">Tus Finanzas Personales</div>
+      <div class="sub">Gestión Financiera</div>
+    </div>
+  </div>
+  <button onclick="cerrarSesion()" style="
+    background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.8);
+    border:1px solid rgba(255,255,255,0.15); border-radius:var(--r-sm);
+    padding:7px 12px; cursor:pointer; font-family:var(--font);
+    font-size:12px; font-weight:500; display:flex; align-items:center; gap:5px;">
+    <span class="material-icons-round" style="font-size:16px;">logout</span>
+    Salir
+  </button>
+</div>
+
+<div id="screen-registrar" class="screen active">
+  <div class="main-container">
+    <!-- ADD EXPENSE -->
+    <div class="card">
+      <div class="card-header">
+        <span class="material-icons-round">add_circle</span>
+        Registrar Gasto
+      </div>
+
+      <div class="input-tabs">
+        <button class="tab-btn active" onclick="switchTab('photo', this)">
+          <span class="material-icons-round">photo_camera</span> Foto
+        </button>
+        <button class="tab-btn" onclick="switchTab('voice', this)">
+          <span class="material-icons-round">mic</span> Voz
+        </button>
+        <button class="tab-btn" onclick="switchTab('text', this)">
+          <span class="material-icons-round">edit_note</span> Texto
+        </button>
+      </div>
+
+      <div class="input-panels">
+        <!-- PHOTO / FILE -->
+        <div class="panel active" id="panel-photo">
+          <div style="display:flex; gap:10px; margin-bottom:10px;">
+            <div class="upload-zone" id="uploadZone" style="flex:1; padding:20px 12px;">
+              <input type="file" id="photoInput" accept="image/*,application/pdf,.pdf,.heic,.heif,.webp,.bmp,.tiff,.png,.jpg,.jpeg" capture="environment" onchange="handleFileSelect(event)">
+              <div class="upload-icon" style="font-size:32px;"><span class="material-icons-round">photo_camera</span></div>
+              <p style="font-size:13px;"><strong>Cámara</strong></p>
+            </div>
+            <div class="upload-zone" id="uploadZoneFile" style="flex:1; padding:20px 12px;">
+              <input type="file" id="fileInput" accept="image/*,application/pdf,.pdf,.heic,.heif,.webp,.bmp,.tiff,.png,.jpg,.jpeg" onchange="handleFileSelect(event)">
+              <div class="upload-icon" style="font-size:32px;"><span class="material-icons-round">upload_file</span></div>
+              <p style="font-size:13px;"><strong>Importar archivo</strong></p>
+              <p style="font-size:11px; margin-top:2px; color:var(--text-2);">Imagen o PDF</p>
+            </div>
+          </div>
+          <img class="preview-img" id="previewImg" alt="Preview">
+          <div class="pdf-preview" id="pdfPreview">
+            <span class="material-icons-round">picture_as_pdf</span>
+            <div class="pdf-preview-info">
+              <div class="pdf-preview-name" id="pdfName"></div>
+              <div class="pdf-preview-size" id="pdfSize"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VOICE -->
+        <div class="panel" id="panel-voice">
+          <div class="voice-container">
+            <div class="record-status" id="recordStatus">Presioná el botón para grabar</div>
+            <div class="record-timer" id="recordTimer" style="display:none">00:00</div>
+            <button class="record-btn" id="recordBtn" onclick="toggleRecording()">
+              <span class="material-icons-round" id="recordIcon">mic</span>
+            </button>
+            <div class="audio-note">
+              <span class="material-icons-round">tips_and_updates</span>
+              <span>Decí algo como: <em>"Compré medialunas en La Perla, gasté 1500 pesos, categoría alimentación"</em></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TEXT -->
+        <div class="panel" id="panel-text">
+          <textarea class="text-input-area" id="textInput" placeholder="Describí el gasto en lenguaje natural...&#10;&#10;Ejemplo: Cargué nafta en YPF, pagué $18.500 con débito. Fue hoy a las 10am."></textarea>
+          <div class="text-hint">💡 No hace falta que sea exacto, la IA entiende lenguaje natural</div>
+        </div>
+
+        <!-- PROCESAR BTN -->
+        <button class="btn-analyze" id="btnAnalyze" onclick="analyzeExpense()">
+          <div class="spinner" id="loadingSpinner"></div>
+          <span class="material-icons-round" id="analyzeIcon">auto_awesome</span>
+          <span id="analyzeText">Procesar</span>
+        </button>
+
+        <div class="error-msg" id="errorMsg">
+          <span class="material-icons-round">error_outline</span>
+          <span id="errorText"></span>
+        </div>
+
+        <!-- MULTI-ITEM RESULT -->
+        <div class="multi-result-preview" id="resultPreview">
+          <div class="multi-result-header">
+            <h4><span class="material-icons-round">check_circle</span> Revisá y confirmá los gastos</h4>
+            <span class="multi-result-count" id="resultCount">0 ítems</span>
+          </div>
+          <div class="result-items-list" id="resultItemsList"></div>
+          <div class="multi-result-actions">
+            <button class="btn-save-all" onclick="saveAllExpenses()">
+              <span class="material-icons-round">save</span> Guardar todos
+            </button>
+            <button class="btn-discard-all" onclick="discardResult()">
+              <span class="material-icons-round" style="font-size:16px;vertical-align:middle">close</span> Descartar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-resumen" class="screen" style="display:none">
+  <div class="main-container">
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total del período</div>
+        <div class="stat-value" id="statTotal">$ 0</div>
+        <div class="stat-sub" id="statPeriodLabel">Todos los gastos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Cantidad de gastos</div>
+        <div class="stat-value secondary" id="statCount">0</div>
+        <div class="stat-sub" id="statAvgLabel">Promedio: $ 0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Mayor gasto</div>
+        <div class="stat-value secondary" id="statMax">$ 0</div>
+        <div class="stat-sub" id="statMaxCat">—</div>
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="card filters-card">
+      <div class="filters-title">
+        <span class="material-icons-round">filter_list</span>
+        Filtros
+      </div>
+      <div class="filters-row">
+        <div class="filter-group">
+          <label>Período</label>
+          <select class="filter-select" id="filterPeriod" onchange="onPeriodChange()">
+            <option value="all">Todos</option>
+            <option value="today">Hoy</option>
+            <option value="week">Esta semana</option>
+            <option value="month">Este mes</option>
+            <option value="year">Este año</option>
+            <option value="custom">Rango personalizado</option>
+          </select>
+        </div>
+        <div class="filter-group" id="customRangeGroup" style="display:none">
+          <label>Desde</label>
+          <input type="date" class="filter-input" id="filterFrom" onchange="applyFilters()">
+        </div>
+        <div class="filter-group" id="customRangeGroup2" style="display:none">
+          <label>Hasta</label>
+          <input type="date" class="filter-input" id="filterTo" onchange="applyFilters()">
+        </div>
+        <div class="filter-group">
+          <label>Categoría</label>
+          <select class="filter-select" id="filterCat" onchange="applyFilters()">
+            <option value="all">Todas</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Medio de pago</label>
+          <select class="filter-select" id="filterMedio" onchange="applyFilters()">
+            <option value="all">Todos</option>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Débito">Débito</option>
+            <option value="Crédito">Crédito</option>
+            <option value="Transferencia">Transferencia</option>
+            <option value="Mercado Pago">Mercado Pago</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Comercio</label>
+          <input type="text" class="filter-input" id="filterComercio" placeholder="Buscar..." style="width:120px" oninput="applyFilters()">
+        </div>
+        <div class="filter-group">
+          <label>Descripción</label>
+          <input type="text" class="filter-input" id="filterDesc" placeholder="Buscar..." style="width:120px" oninput="applyFilters()">
+        </div>
+        <div class="filter-group">
+          <label>Monto mín. ($)</label>
+          <input type="number" class="filter-input" id="filterMontoMin" placeholder="0" style="width:90px" oninput="applyFilters()">
+        </div>
+        <div class="filter-group">
+          <label>Monto máx. ($)</label>
+          <input type="number" class="filter-input" id="filterMontoMax" placeholder="∞" style="width:90px" oninput="applyFilters()">
+        </div>
+        <button class="btn-clear-filters" onclick="clearFilters()">
+          <span class="material-icons-round">clear_all</span> Limpiar
+        </button>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="card table-card">
+      <div class="table-header">
+        <div class="table-title">
+          <span class="material-icons-round">table_rows</span>
+          Mis Gastos
+          <span class="table-count" id="tableCount">0</span>
+        </div>
+        <button class="btn-export" onclick="exportCSV()">
+          <span class="material-icons-round">download</span> Exportar Excel
+        </button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th onclick="sortBy('fecha')">Fecha <span class="material-icons-round sort-icon" id="sort-fecha">unfold_more</span></th>
+              <th onclick="sortBy('monto')">Monto <span class="material-icons-round sort-icon" id="sort-monto">unfold_more</span></th>
+              <th>Categoría</th>
+              <th>Medio de pago</th>
+              <th>Comercio</th>
+              <th>Descripción</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="expensesTable"></tbody>
+        </table>
+        <div class="empty-state" id="emptyState">
+          <div><span class="material-icons-round">receipt</span></div>
+          <h3>Sin gastos registrados</h3>
+          <p>Usá la pestaña Registrar para agregar tu primer gasto</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-ingresos" class="screen" style="display:none">
+  <div class="main-container">
+
+    <!-- MES SELECTOR -->
+    <div class="card" style="padding-top:16px; padding-bottom:0;">
+      <div class="mes-selector">
+        <button class="btn-mes" onclick="cambiarMes(-1)"><span class="material-icons-round">chevron_left</span></button>
+        <span class="mes-label" id="mesLabel">—</span>
+        <button class="btn-mes" onclick="cambiarMes(1)"><span class="material-icons-round">chevron_right</span></button>
+      </div>
+    </div>
+
+    <!-- SALDO FINAL -->
+    <div class="saldo-card" id="saldoCard">
+      <div class="saldo-label">Saldo final del mes</div>
+      <div class="saldo-monto" id="saldoMonto">$ 0,00</div>
+      <div class="saldo-sub" id="saldoSub">Ingresos — Egresos</div>
+    </div>
+
+    <!-- INGRESOS -->
+    <div class="card">
+      <div class="card-header" style="margin-bottom:12px;">
+        <span class="material-icons-round">account_balance_wallet</span>
+        Ingresos del mes
+      </div>
+      <div id="ingresosList" style="display:flex; flex-direction:column; gap:8px; padding:0 18px;"></div>
+      <div style="padding:14px 18px 18px; display:flex; gap:8px; align-items:center; border-top:1px solid var(--border); margin-top:14px;">
+        <input type="text" id="newIngresoNombre" class="filter-input" placeholder="Nombre (ej: Sueldo, Caja)" style="flex:1;">
+        <button onclick="agregarIngreso()" style="
+          padding:9px 14px; background:var(--header-bg); color:white;
+          border:none; border-radius:var(--r-md); font-family:var(--font);
+          font-size:13px; font-weight:600; cursor:pointer;
+          display:flex; align-items:center; gap:5px; white-space:nowrap;">
+          <span class="material-icons-round" style="font-size:17px;">add</span> Agregar
+        </button>
+      </div>
+    </div>
+
+    <!-- EGRESOS DEL MES -->
+    <div class="card" style="padding:18px;">
+      <div class="card-header" style="padding:0 0 14px 0;">
+        <span class="material-icons-round">trending_down</span>
+        Gastos del mes por categoría
+      </div>
+      <div id="egresosList"></div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding-top:12px; border-top:1px solid var(--border); margin-top:4px;">
+        <span style="font-size:14px; font-weight:700;">Total egresos</span>
+        <span style="font-size:16px; font-weight:800; color:var(--error);" id="totalEgresos">$ 0,00</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="screen-config" class="screen" style="display:none">
+  <div class="main-container">
+    <div class="card" style="padding:20px 18px;">
+      <div class="card-header" style="padding:0 0 16px 0;">
+        <span class="material-icons-round">category</span>
+        Categorías de gastos
+      </div>
+      <p style="font-size:13px; color:var(--text-2); margin-bottom:16px;">Gestioná tus categorías. Las personalizadas se crean sin ícono.</p>
+
+      <div id="catList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:18px;"></div>
+
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="text" id="newCatInput" class="filter-input" placeholder="Nueva categoría..." style="flex:1; font-size:14px;">
+        <button onclick="addCategory()" style="
+          padding:9px 16px; background:var(--header-bg); color:white;
+          border:none; border-radius:var(--r-md); font-family:var(--font);
+          font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:5px;">
+          <span class="material-icons-round" style="font-size:17px;">add</span> Agregar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL API KEY -->
+<div class="modal-overlay" id="apiModal">
+  <div class="modal">
+    <h3>🔑 API Key de Gemini</h3>
+    <p>Conseguí tu API key gratis en <strong>aistudio.google.com</strong> → "Get API key". No tiene costo.</p>
+    <input type="password" id="apiKeyInput" placeholder="Pegá tu API key aquí..." autocomplete="off">
+    <div style="font-size:12px; color:var(--text-2); margin-bottom:14px; margin-top:-8px;">
+      🔒 Se guarda solo en tu navegador, no se envía a ningún servidor.
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeApiModal()">Cancelar</button>
+      <button class="btn-modal-ok" onclick="saveApiKey()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="material-icons-round" id="toastIcon">check_circle</span>
+  <span id="toastMsg"></span>
+</div>
+
+<div id="screen-soporte" class="screen" style="display:none">
+  <div class="main-container">
+    <div class="card" style="padding:28px 20px; text-align:center;">
+      <div style="width:70px; height:70px; background:var(--primary-light); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+        <span class="material-icons-round" style="font-size:34px; color:var(--primary-dark);">support_agent</span>
+      </div>
+      <h2 style="font-size:18px; font-weight:700; margin-bottom:8px;">¿Necesitás ayuda?</h2>
+      <p style="font-size:14px; color:var(--text-2); margin-bottom:24px; line-height:1.5;">
+        Contactame por Instagram para consultas, sugerencias o reportar algún problema con la app.
+      </p>
+      <a href="https://www.instagram.com/santi.fabricio" target="_blank" style="
+        display:inline-flex; align-items:center; gap:10px;
+        padding:14px 28px;
+        background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+        color:white; border-radius:var(--r-lg); text-decoration:none;
+        font-family:var(--font); font-size:15px; font-weight:700;
+        box-shadow:var(--shadow-md); transition:opacity 0.2s;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+        </svg>
+        @santi.fabricio
+      </a>
+    </div>
+  </div>
+  <div style="text-align:center; padding:20px 20px 12px; color:var(--text-3); font-size:11px; line-height:1.6;">
+    App desarrollada por el Contador Santiago Tolaba. 2026
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-item active" id="nav-registrar" onclick="switchScreen('registrar')">
+    <div class="nav-icon-wrap"><span class="material-icons-round">add_circle</span></div>
+    <span class="nav-label">Registrar</span>
+  </button>
+  <button class="nav-item" id="nav-ingresos" onclick="switchScreen('ingresos')">
+    <div class="nav-icon-wrap"><span class="material-icons-round">savings</span></div>
+    <span class="nav-label">Ingresos</span>
+  </button>
+  <button class="nav-item" id="nav-resumen" onclick="switchScreen('resumen')">
+    <div class="nav-icon-wrap"><span class="material-icons-round">bar_chart</span></div>
+    <span class="nav-label">Resumen</span>
+  </button>
+  <button class="nav-item" id="nav-config" onclick="switchScreen('config')">
+    <div class="nav-icon-wrap"><span class="material-icons-round">settings</span></div>
+    <span class="nav-label">Config</span>
+  </button>
+  <button class="nav-item" id="nav-soporte" onclick="switchScreen('soporte')">
+    <div class="nav-icon-wrap"><span class="material-icons-round">help_outline</span></div>
+    <span class="nav-label">Soporte</span>
+  </button>
+</nav>
+
+</div><!-- end app-wrapper -->
+
+<script src="script.js"></script>
+</body>
+</html>
